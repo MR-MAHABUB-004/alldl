@@ -15,7 +15,6 @@ function hashFile(url) {
     return crypto.createHash("md5").update(url).digest("hex") + ext;
 }
 
-
 async function downloadToCache(url) {
     const filename = hashFile(url);
     const filePath = path.join(CACHE_DIR, filename);
@@ -42,7 +41,6 @@ async function downloadToCache(url) {
     return filePath;
 }
 
-
 app.get("/stream/:file", (req, res) => {
     const fileName = req.params.file;
     const filePath = path.join(CACHE_DIR, fileName);
@@ -54,16 +52,13 @@ app.get("/stream/:file", (req, res) => {
     res.sendFile(filePath);
 });
 
-
 app.get("/api/dl", async (req, res) => {
     const videoUrl = req.query.url;
     if (!videoUrl) return res.json({ error: "Missing ?url=" });
 
     try {
-    
-      const remoteApi = `https://mahabub-aldl.vercel.app/api/dl?url=${encodeURIComponent(videoUrl)}`;
+        const remoteApi = `https://mahabub-aldl.vercel.app/api/dl?url=${encodeURIComponent(videoUrl)}`;
         const { data } = await axios.get(remoteApi);
-
 
         const sd = data.sd;
         const hd = data.hd;
@@ -81,7 +76,6 @@ app.get("/api/dl", async (req, res) => {
             hdLocal = `${req.protocol}://${req.get("host")}/stream/${path.basename(hdPath)}`;
         }
 
-
         const finalResponse = {
             ...data,
             sd: sdLocal || null,
@@ -97,3 +91,19 @@ app.get("/api/dl", async (req, res) => {
 });
 
 app.listen(PORT, () => console.log("Server running on port " + PORT));
+
+
+// --- Auto clear cache every 30 minutes ---
+setInterval(() => {
+    fs.readdir(CACHE_DIR, (err, files) => {
+        if (err) return console.log("Error reading cache folder:", err);
+
+        for (const file of files) {
+            const filePath = path.join(CACHE_DIR, file);
+            fs.unlink(filePath, (err) => {
+                if (err) console.log("Error deleting file:", file, err);
+                else console.log("Deleted cached file:", file);
+            });
+        }
+    });
+}, 30 * 60 * 1000); 
