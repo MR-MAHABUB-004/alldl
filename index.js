@@ -80,6 +80,7 @@ app.get("/api/dl", async (req, res) => {
             ...data,
             sd: sdLocal || null,
             hd: hdLocal || null,
+            backup: hdLocal || sdLocal || null,
         };
 
         return res.json(finalResponse);
