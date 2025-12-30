@@ -7,9 +7,11 @@ const crypto = require("crypto");
 const app = express();
 const PORT = process.env.PORT || 7979;
 
+// ================= CACHE SETUP =================
 const CACHE_DIR = path.join(__dirname, "cache");
 if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR);
 
+// ================= UTILS =================
 function hashFile(url) {
     const ext = path.extname(new URL(url).pathname) || ".mp4";
     return crypto.createHash("md5").update(url).digest("hex") + ext;
@@ -24,7 +26,6 @@ async function downloadToCache(url) {
     }
 
     const writer = fs.createWriteStream(filePath);
-
     const res = await axios({
         method: "GET",
         url,
@@ -41,6 +42,7 @@ async function downloadToCache(url) {
     return filePath;
 }
 
+// ================= STREAM ROUTE =================
 app.get("/stream/:file", (req, res) => {
     const fileName = req.params.file;
     const filePath = path.join(CACHE_DIR, fileName);
@@ -52,6 +54,22 @@ app.get("/stream/:file", (req, res) => {
     res.sendFile(filePath);
 });
 
+// ================= DIRECT DOWNLOAD ROUTE =================
+app.get("/direct/:file", (req, res) => {
+    const fileName = req.params.file;
+    const filePath = path.join(CACHE_DIR, fileName);
+
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: "File not found" });
+    }
+
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader("Content-Type", "application/octet-stream");
+
+    res.download(filePath);
+});
+
+// ================= MAIN API =================
 app.get("/api/dl", async (req, res) => {
     const videoUrl = req.query.url;
     if (!videoUrl) return res.json({ error: "Missing ?url=" });
@@ -63,48 +81,60 @@ app.get("/api/dl", async (req, res) => {
         const sd = data.sd;
         const hd = data.hd;
 
-        let sdLocal = null;
-        let hdLocal = null;
+        let sdStream = null;
+        let hdStream = null;
+        let directDl = null;
 
+        // SD
         if (sd) {
             const sdPath = await downloadToCache(sd);
-            sdLocal = `${req.protocol}://${req.get("host")}/stream/${path.basename(sdPath)}`;
+            const file = path.basename(sdPath);
+
+            sdStream = `${req.protocol}://${req.get("host")}/stream/${file}`;
+            directDl = `${req.protocol}://${req.get("host")}/direct/${file}`;
         }
 
+        // HD (priority)
         if (hd) {
             const hdPath = await downloadToCache(hd);
-            hdLocal = `${req.protocol}://${req.get("host")}/stream/${path.basename(hdPath)}`;
+            const file = path.basename(hdPath);
+
+            hdStream = `${req.protocol}://${req.get("host")}/stream/${file}`;
+            directDl = `${req.protocol}://${req.get("host")}/direct/${file}`;
         }
 
-        const finalResponse = {
+        return res.json({
             ...data,
-            sd: sdLocal || null,
-            hd: hdLocal || null,
-            backup: hdLocal || sdLocal || null,
-        };
-
-        return res.json(finalResponse);
+            sd: sdStream,
+            hd: hdStream,
+            backup: hdStream || sdStream || null,
+            directdl: directDl
+        });
 
     } catch (err) {
-        console.log(err);
-        return res.json({ error: "Something went wrong", detail: err.message });
+        console.error(err);
+        return res.json({
+            error: "Something went wrong",
+            detail: err.message
+        });
     }
 });
 
-app.listen(PORT, () => console.log("Server running on port " + PORT));
-
-
-// --- Auto clear cache every 30 minutes ---
+// ================= AUTO CLEAR CACHE =================
 setInterval(() => {
     fs.readdir(CACHE_DIR, (err, files) => {
-        if (err) return console.log("Error reading cache folder:", err);
+        if (err) return console.log("Cache read error:", err);
 
         for (const file of files) {
             const filePath = path.join(CACHE_DIR, file);
             fs.unlink(filePath, (err) => {
-                if (err) console.log("Error deleting file:", file, err);
-                else console.log("Deleted cached file:", file);
+                if (!err) console.log("Deleted cached file:", file);
             });
         }
     });
-}, 30 * 60 * 1000); 
+}, 30 * 60 * 1000);
+
+// ================= START SERVER =================
+app.listen(PORT, () => {
+    console.log("✅ Server running on port", PORT);
+});
