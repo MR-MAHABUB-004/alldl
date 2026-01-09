@@ -43,6 +43,10 @@ async function downloadToCache(url) {
     return filePath;
 }
 
+app.get('/', (req, res) => {
+	res.sendFile(path.join(__dirname, 'public/index.html'));
+});
+
 // ================= STREAM ROUTE =================
 app.get("/stream/:file", (req, res) => {
     const fileName = req.params.file;

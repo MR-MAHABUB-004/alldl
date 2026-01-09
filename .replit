@@ -8,6 +8,7 @@ channel = "stable-25_05"
 [deployment]
 deploymentTarget = "autoscale"
 run = ["node", "index.js"]
+build = ["sh", "-c", "npm install"]
 
 [workflows]
 runButton = "Project"

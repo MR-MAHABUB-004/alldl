@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pok Pok Pokat</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #0b0b0b;
+      font-family: 'Arial', sans-serif;
+    }
+
+    .pok-box {
+      text-align: center;
+    }
+
+    .pok {
+      font-size: 60px;
+      font-weight: bold;
+      color: #00ffd5;
+      text-shadow: 0 0 10px #00ffd5, 0 0 30px #00ffd5;
+      animation: pop 0.6s infinite alternate;
+    }
+
+    .pokat {
+      font-size: 30px;
+      margin-top: 10px;
+      color: #ff4d4d;
+      animation: shake 0.4s infinite;
+    }
+
+    @keyframes pop {
+      from {
+        transform: scale(1);
+      }
+      to {
+        transform: scale(1.2);
+      }
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+      100% { transform: translateX(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="pok-box">
+    <div class="pok">POK POK POK</div>
+    <div class="pokat">POKAT 😆</div>
+  </div>
+
+</body>
+</html>
