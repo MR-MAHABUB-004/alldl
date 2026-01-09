@@ -5,7 +5,8 @@ const path = require("path");
 const crypto = require("crypto");
 
 const app = express();
-const PORT = process.env.PORT || 7979;
+const PORT = 5000;
+const HOST = "0.0.0.0";
 
 // ================= CACHE SETUP =================
 const CACHE_DIR = path.join(__dirname, "cache");
@@ -135,6 +136,6 @@ setInterval(() => {
 }, 30 * 60 * 1000);
 
 // ================= START SERVER =================
-app.listen(PORT, () => {
-    console.log("✅ Server running on port", PORT);
+app.listen(PORT, HOST, () => {
+    console.log("✅ Server running on", HOST + ":" + PORT);
 });
